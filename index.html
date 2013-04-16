@@ -1,0 +1,367 @@
+<!DOCTYPE html><html><head><meta charset="utf8"><title>Node Email Templates</title><link rel="stylesheet" href="css/bootstrap.min.css"><link rel="stylesheet" href="css/bootstrap-responsive.min.css"><link rel="stylesheet" href="css/font-awesome.min.css"><link rel="stylesheet" href="css/prettify.css"><link rel="stylesheet" href="css/docs.css"></head></html><body data-spy="scroll" data-target="#docs-navbar" data-offset="81"><div id="spacer"></div><div class="navbar navbar-inverse navbar-fixed-top"><div class="navbar-inner"><div class="container"><a href="/" class="brand">Node Email Templates</a><ul class="nav pull-right"><li><a href="https://github.com/niftylettuce/node-email-templates"><i class="icon-github"></i> Github Repo</a></li></ul></div></div></div><div class="container"><div class="row"><div class="span2"><div id="docs-navbar" data-spy="affix"><div class="row"><div class="span2"><ul class="nav nav-pills nav-stacked">
+<li class="active"><a href="#email-templates">Email Templates</a></li>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#quick-start">Quick Start</a></li>
+<li><a href="#ejs-custom-tags">EJS Custom Tags</a></li>
+<li><a href="#examples">Examples</a><ul>
+<li><a href="#basic">Basic</a></li>
+<li><a href="#nodemailer">Nodemailer</a></li>
+<li><a href="#postmark">Postmark</a></li>
+</ul>
+</li>
+<li><a href="#lazyweb-requests">Lazyweb Requests</a></li>
+<li><a href="#changelog">Changelog</a></li>
+<li><a href="#contributors">Contributors</a></li>
+<li><a href="#license">License</a></li>
+</ul></div></div></div></div><div class="span10"><h1>node-email-templates <sup><a href="https://npmjs.org/package/email-templates"><img src="http://vb.teelaun.ch/niftylettuce/node-email-templates.svg" alt="Version Badge"></a></sup></h1>
+<p>Node.js module for rendering beautiful emails with <a href="https://github.com/visionmedia/ejs">ejs</a> templates and email-friendly inline CSS using <a href="https://github.com/LearnBoost/juice">juice</a>.</p>
+<p>Follow <a href="http://twitter.com/niftylettuce">@niftylettuce</a> on Twitter for updates.</p>
+<p>Like this module?  Check out <a href="https://github.com/niftylettuce/express-cdn">express-cdn</a>!</p>
+
+
+<hr><h2><a href="#email-templates" name="email-templates" id="email-templates">Email Templates</a></h2>
+<p>For professional and customizable email templates, please visit <a href="https://github.com/mailchimp/Email-Blueprints">https://github.com/mailchimp/Email-Blueprints</a>.</p>
+<hr><h2><a href="#installation" name="installation" id="installation">Installation</a></h2>
+<hr><h3><a href="#unix/os-x" name="unix/os-x" id="unix/os-x">Unix/OS X</a></h3>
+<pre class="prettyprint linenums"><code class="lang-bash">npm install email-templates</code></pre>
+<hr><h3><a href="#windows" name="windows" id="windows">Windows</a></h3>
+<pre class="prettyprint linenums"><code class="lang-bash">npm install email-templates-windows</code></pre>
+<hr><h2><a href="#quick-start" name="quick-start" id="quick-start">Quick Start</a></h2>
+<ol>
+<li>Install the module for your respective project <code>npm install email-templates</code>.</li>
+<li>Create a folder called <code>templates</code> inside your root directory (or elsewhere).</li>
+<li>For each of your templates, respectively name and create a folder inside the <code>templates</code> folder.</li>
+<li>Add the following files inside the template&#39;s folder:<ul>
+<li><code>html.ejs</code> - html + <a href="https://github.com/visionmedia/ejs">ejs</a> version of your email template (<strong>required</strong>)</li>
+<li><code>text.ejs</code> - text + <a href="https://github.com/visionmedia/ejs">ejs</a> version of your email template (<strong>optional</strong>)</li>
+<li><code>style.css</code> - stylesheet for the template, which will render <code>html.ejs</code> with inline CSS (<strong>optional</strong>)</li>
+</ul>
+</li>
+<li>You may use the <code>include</code> directive from ejs (for example, to include a common header or footer).  See the <code>/examples</code> folder for details.</li>
+<li>Utilize one of the examples below for your respective email module and start sending beautiful emails!</li>
+</ol>
+<hr><h2><a href="#ejs-custom-tags" name="ejs-custom-tags" id="ejs-custom-tags">EJS Custom Tags</a></h2>
+<p>Want to use different opening and closing tags instead of the EJS&#39;s default <code>&lt;%</code> and <code>%&gt;</code>?.</p>
+<pre class="prettyprint linenums"><code class="lang-js">...
+emailTemplates(templatesDir, { open: &#39;{{&#39;, close: &#39;}}&#39; }, function(err, template) {
+...</code></pre>
+<p><strong>NOTE</strong>: You can also pass <a href="https://github.com/visionmedia/ejs#options" target="_blank">other options from EJS&#39;s documentation</a>.</p>
+<hr><h2><a href="#examples" name="examples" id="examples">Examples</a></h2>
+<hr><h3><a href="#basic" name="basic" id="basic">Basic</a></h3>
+<p>Render a template for a single email or render multiple (having only loaded the template once).</p>
+<pre class="prettyprint linenums"><code class="lang-js">var path           = require(&#39;path&#39;)
+  , templatesDir   = path.join(__dirname, &#39;templates&#39;)
+  , emailTemplates = require(&#39;email-templates&#39;);
+
+emailTemplates(templatesDir, function(err, template) {
+
+  // Render a single email with one template
+  var locals = { pasta: &#39;Spaghetti&#39; };
+  template(&#39;pasta-dinner&#39;, locals, function(err, html, text) {
+    // ...
+  });
+
+  // Render multiple emails with one template
+  var locals = [
+    { pasta: &#39;Spaghetti&#39; },
+    { pasta: &#39;Rigatoni&#39; }
+  ];
+  var Render = function(locals) {
+    this.locals = locals;
+    this.send = function(err, html, text) {
+      // ...
+    };
+    this.batch = function(batch) {
+      batch(this.locals, this.send);
+    };
+  };
+  template(&#39;pasta-dinner&#39;, true, function(err, batch) {
+    for(var user in users) {
+      var render = new Render(users[user]);
+      render.batch(batch);
+    }
+  });
+
+});</code></pre>
+<hr><h3><a href="#nodemailer" name="nodemailer" id="nodemailer">Nodemailer</a></h3>
+<pre class="prettyprint linenums"><code class="lang-js">var path           = require(&#39;path&#39;)
+  , templatesDir   = path.resolve(__dirname, &#39;..&#39;, &#39;templates&#39;)
+  , emailTemplates = require(&#39;email-templates&#39;)
+  , nodemailer     = require(&#39;nodemailer&#39;);
+
+emailTemplates(templatesDir, function(err, template) {
+
+  if (err) {
+    console.log(err);
+  } else {
+
+    // ## Send a single email
+
+    // Prepare nodemailer transport object
+    var transport = nodemailer.createTransport(&quot;SMTP&quot;, {
+      service: &quot;Gmail&quot;,
+      auth: {
+        user: &quot;some-user@gmail.com&quot;,
+        pass: &quot;some-password&quot;
+      }
+    });
+
+    // An example users object with formatted email function
+    var locals = {
+      email: &#39;mamma.mia@spaghetti.com&#39;,
+      name: {
+        first: &#39;Mamma&#39;,
+        last: &#39;Mia&#39;
+      }
+    };
+
+    // Send a single email
+    template(&#39;newsletter&#39;, locals, function(err, html, text) {
+      if (err) {
+        console.log(err);
+      } else {
+        transport.sendMail({
+          from: &#39;Spicy Meatball &lt;spicy.meatball@spaghetti.com&gt;&#39;,
+          to: locals.email,
+          subject: &#39;Mangia gli spaghetti con polpette!&#39;,
+          html: html,
+          // generateTextFromHTML: true,
+          text: text
+        }, function(err, responseStatus) {
+          if (err) {
+            console.log(err);
+          } else {
+            console.log(responseStatus.message);
+          }
+        });
+      }
+    });
+
+
+    // ## Send a batch of emails and only load the template once
+
+    // Prepare nodemailer transport object
+    var transportBatch = nodemailer.createTransport(&quot;SMTP&quot;, {
+      service: &quot;Gmail&quot;,
+      auth: {
+        user: &quot;some-user@gmail.com&quot;,
+        pass: &quot;some-password&quot;
+      }
+    });
+
+    // An example users object
+    var users = [
+      {
+        email: &#39;pappa.pizza@spaghetti.com&#39;,
+        name: {
+          first: &#39;Pappa&#39;,
+          last: &#39;Pizza&#39;
+        }
+      },
+      {
+        email: &#39;mister.geppetto@spaghetti.com&#39;,
+        name: {
+          first: &#39;Mister&#39;,
+          last: &#39;Geppetto&#39;
+        }
+      }
+    ];
+
+    // Custom function for sending emails outside the loop
+    //
+    // NOTE:
+    //  We need to patch postmark.js module to support the API call
+    //  that will let us send a batch of up to 500 messages at once.
+    //  (e.g. &lt;https://github.com/diy/trebuchet/blob/master/lib/index.js#L160&gt;)
+    var Render = function(locals) {
+      this.locals = locals;
+      this.send = function(err, html, text) {
+        if (err) {
+          console.log(err);
+        } else {
+          transportBatch.sendMail({
+            from: &#39;Spicy Meatball &lt;spicy.meatball@spaghetti.com&gt;&#39;,
+            to: locals.email,
+            subject: &#39;Mangia gli spaghetti con polpette!&#39;,
+            html: html,
+            // generateTextFromHTML: true,
+            text: text
+          }, function(err, responseStatus) {
+            if (err) {
+              console.log(err);
+            } else {
+              console.log(responseStatus.message);
+            }
+          });
+        }
+      };
+      this.batch = function(batch) {
+        batch(this.locals, templatesDir, this.send);
+      };
+    };
+
+    // Load the template and send the emails
+    template(&#39;newsletter&#39;, true, function(err, batch) {
+      for(var user in users) {
+        var render = new Render(users[user]);
+        render.batch(batch);
+      }
+    });
+
+  }
+});</code></pre>
+<hr><h3><a href="#postmark" name="postmark" id="postmark">Postmark</a></h3>
+<p>This example utilizes <a href="https://github.com/voodootikigod/postmark.js">Postmark.js</a>.</p>
+<p><strong>NOTE</strong>: Did you know <code>nodemailer</code> can also be used to send SMTP email through Postmark? See <a href="https://github.com/andris9/Nodemailer#well-known-services-for-smtp">this section</a> of their Readme for more info.</p>
+<p>For more message format options, see <a href="http://developer.postmarkapp.com/developer-build.html#message-format">this section</a> of Postmark&#39;s developer documentation section.</p>
+<pre class="prettyprint linenums"><code class="lang-js">var path           = require(&#39;path&#39;)
+  , templatesDir   = path.resolve(__dirname, &#39;..&#39;, &#39;templates&#39;)
+  , emailTemplates = require(&#39;email-templates&#39;)
+  , postmark       = require(&#39;postmark&#39;)(&#39;your-api-key&#39;);
+
+emailTemplates(templatesDir, function(err, template) {
+
+  if (err) {
+    console.log(err);
+  } else {
+
+    // ## Send a single email
+
+    // An example users object with formatted email function
+    var locals = {
+      email: &#39;mamma.mia@spaghetti.com&#39;,
+      name: {
+        first: &#39;Mamma&#39;,
+        last: &#39;Mia&#39;
+      }
+    };
+
+    // Send a single email
+    template(&#39;newsletter&#39;, locals, function(err, html, text) {
+      if (err) {
+        console.log(err);
+      } else {
+        postmark.send({
+          From: &#39;Spicy Meatball &lt;spicy.meatball@spaghetti.com&gt;&#39;,
+          To: locals.email,
+          Subject: &#39;Mangia gli spaghetti con polpette!&#39;,
+          HtmlBody: html,
+          TextBody: text
+        }, function(err, response) {
+          if (err) {
+            console.log(err.status);
+            console.log(err.message);
+          } else {
+            console.log(response);
+          }
+        });
+      }
+    });
+
+
+    // ## Send a batch of emails and only load the template once
+
+    // An example users object
+    var users = [
+      {
+        email: &#39;pappa.pizza@spaghetti.com&#39;,
+        name: {
+          first: &#39;Pappa&#39;,
+          last: &#39;Pizza&#39;
+        }
+      },
+      {
+        email: &#39;mister.geppetto@spaghetti.com&#39;,
+        name: {
+          first: &#39;Mister&#39;,
+          last: &#39;Geppetto&#39;
+        }
+      }
+    ];
+
+    // Custom function for sending emails outside the loop
+    //
+    // NOTE:
+    //  We need to patch postmark.js module to support the API call
+    //  that will let us send a batch of up to 500 messages at once.
+    //  (e.g. &lt;https://github.com/diy/trebuchet/blob/master/lib/index.js#L160&gt;)
+    var Render = function(locals) {
+      this.locals = locals;
+      this.send = function(err, html, text) {
+        if (err) {
+          console.log(err);
+        } else {
+          postmark.send({
+            From: &#39;Spicy Meatball &lt;spicy.meatball@spaghetti.com&gt;&#39;,
+            To: locals.email,
+            Subject: &#39;Mangia gli spaghetti con polpette!&#39;,
+            HtmlBody: html,
+            TextBody: text
+          }, function(err, response) {
+            if (err) {
+              console.log(err.status);
+              console.log(err.message);
+            } else {
+              console.log(response);
+            }
+          });
+        }
+      };
+      this.batch = function(batch) {
+        batch(this.locals, templatesDir, this.send);
+      };
+    };
+
+    // Load the template and send the emails
+    template(&#39;newsletter&#39;, true, function(err, batch) {
+      for(user in users) {
+        var render = new Render(users[user]);
+        render.batch(batch);
+      }
+    });
+
+  }
+});</code></pre>
+<hr><h2><a href="#lazyweb-requests" name="lazyweb-requests" id="lazyweb-requests">Lazyweb Requests</a></h2>
+<p>These are feature requests that we would appreciate contributors for:</p>
+<ul>
+<li>Merge with @superjoe30 swig email templates fork</li>
+<li>Add ability to specify template language <code>swig</code>, <code>jade</code>, <code>ejs</code>, <code>handlebars</code>, ...</li>
+<li>Add ability to specify css language <code>sass</code>, <code>less</code>, <code>styl</code>, ...</li>
+<li>Add parsing of HTML with CSS inlining and HTML linting</li>
+</ul>
+<hr><h2><a href="#changelog" name="changelog" id="changelog">Changelog</a></h2>
+<ul>
+<li><p>0.1.0 - Fixed batch documentation issue</p>
+</li>
+<li><p>0.0.9 - Fixed <code>juice</code> dependency issue</p>
+</li>
+<li><p>0.0.8 - Minor updates</p>
+</li>
+<li><p>0.0.7 - Added support for ejs&#39;s <code>include</code> directive thanks to @nicjansma</p>
+</li>
+<li><p>0.0.6 - Fixed batch problem (<code>...has no method slice</code>) thanks to @vekexasia</p>
+</li>
+<li><p>0.0.5 - Added support for an optional <a href="http://nodejs.org/docs/latest/api/zlib.html">zlib</a> compression type (e.g. you can return compressed html/text buffer for db storage)</p>
+<pre class="prettyprint linenums"><code class="lang-bash">  template(&#39;newsletter&#39;, locals, &#39;deflateRaw&#39;, function(err, html, text) {
+    // The `html` and `text` are buffers compressed using zlib.deflateRaw
+    // &lt;http://nodejs.org/docs/latest/api/zlib.html#zlib_zlib_deflateraw_buf_callback&gt;
+    // **NOTE**: You could also pass &#39;deflate&#39; or &#39;gzip&#39; if necessary, and it works with batch rendering as well
+  })</code></pre>
+</li>
+<li><p>0.0.4 (with bug fix for 0.0.3) - Removed requirement for <code>style.css</code> and <code>text.ejs</code> files with compatibility in <code>node</code> v0.6.x to v0.8.x (utilizes <code>path.exists</code> vs. <code>fs.exists</code> respectively).</p>
+</li>
+</ul>
+<hr><h2><a href="#contributors" name="contributors" id="contributors">Contributors</a></h2>
+<ul>
+<li>Nick Baugh <a href="&#x6d;&#x61;&#x69;&#x6c;&#116;&#x6f;&#x3a;&#110;&#x69;&#x66;&#116;&#x79;&#x6c;&#x65;&#116;&#x74;&#117;&#99;&#x65;&#x40;&#103;&#x6d;&#97;&#x69;&#x6c;&#x2e;&#x63;&#x6f;&#x6d;">&#110;&#x69;&#x66;&#116;&#x79;&#x6c;&#x65;&#116;&#x74;&#117;&#99;&#x65;&#x40;&#103;&#x6d;&#97;&#x69;&#x6c;&#x2e;&#x63;&#x6f;&#x6d;</a></li>
+<li>Andrea Baccega <a href="&#109;&#x61;&#x69;&#x6c;&#116;&#111;&#58;&#x76;&#101;&#x6b;&#x65;&#x78;&#x61;&#x73;&#x69;&#x61;&#64;&#x67;&#109;&#x61;&#x69;&#108;&#x2e;&#99;&#111;&#x6d;">&#x76;&#101;&#x6b;&#x65;&#x78;&#x61;&#x73;&#x69;&#x61;&#64;&#x67;&#109;&#x61;&#x69;&#108;&#x2e;&#99;&#111;&#x6d;</a></li>
+<li>Nic Jansma (<a href="http://nicj.net">http://nicj.net</a>)</li>
+</ul>
+<hr><h2><a href="#license" name="license" id="license">License</a></h2>
+<p>The MIT License</p>
+<p>Copyright (c) 2012- Nick Baugh <a href="&#x6d;&#x61;&#105;&#x6c;&#x74;&#x6f;&#58;&#x6e;&#x69;&#102;&#116;&#121;&#108;&#101;&#116;&#116;&#x75;&#x63;&#x65;&#64;&#103;&#x6d;&#97;&#x69;&#x6c;&#x2e;&#99;&#x6f;&#109;">&#x6e;&#x69;&#102;&#116;&#121;&#108;&#101;&#116;&#116;&#x75;&#x63;&#x65;&#64;&#103;&#x6d;&#97;&#x69;&#x6c;&#x2e;&#99;&#x6f;&#109;</a> (<a href="http://niftylettuce.com/">http://niftylettuce.com/</a>)</p>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the &quot;Software&quot;), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
+<p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+<p>THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+</div></div></div><script src="js/vendor/jquery.min.js"></script><script src="js/vendor/bootstrap.min.js"></script><script src="js/vendor/prettify.js"></script><script src="js/vendor/jquery.ba-hashchange.js"></script><script src="js/vendor/jquery.scrollTo.js"></script><script src="js/vendor/bootstrap-adjust-hash.js"></script><script src="js/main.js"></script></body>
